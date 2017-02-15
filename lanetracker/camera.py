@@ -4,7 +4,20 @@ import matplotlib.image as mpimg
 
 
 class CameraCalibration(object):
+    """
+    Prepares camera calibration pipeline based on a set of calibration images.
+    """
+
     def __init__(self, calibration_images, pattern_size=(9, 6), retain_calibration_images=False):
+        """
+        Initialises camera calibration pipeline based on a set of calibration images.
+
+        Parameters
+        ----------
+        calibration_images          : Calibration images
+        pattern_size                : Shape of the calibration pattern
+        retain_calibration_images   : Flag indicating if we need to preserve calibration images
+        """
         self.camera_matrix = None
         self.dist_coefficients = None
         self.calibration_images_success = []
@@ -12,6 +25,17 @@ class CameraCalibration(object):
         self.calibrate(calibration_images, pattern_size, retain_calibration_images)
 
     def __call__(self, image):
+        """
+        Calibrates an image based on saved settings.
+
+        Parameters
+        ----------
+        image       : Image to calibrate
+
+        Returns
+        -------
+        Calibrated image
+        """
         if self.camera_matrix is not None and self.dist_coefficients is not None:
             return cv2.undistort(
                 image, self.camera_matrix, self.dist_coefficients, None, self.camera_matrix
@@ -20,6 +44,15 @@ class CameraCalibration(object):
             return image
 
     def calibrate(self, images, pattern_size, retain_calibration_images):
+        """
+        Prepares calibration settings.
+
+        Parameters
+        ----------
+        images                      : Set of calibration images
+        pattern_size                : Calibration pattern shape
+        retain_calibration_images   : Flag indicating if we need to preserve calibration images
+        """
         # Prepare object points: (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         pattern = np.zeros((pattern_size[1] * pattern_size[0], 3), np.float32)
         pattern[:, :2] = np.mgrid[0:pattern_size[0], 0:pattern_size[1]].T.reshape(-1, 2)

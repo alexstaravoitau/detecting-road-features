@@ -3,6 +3,17 @@ import cv2
 
 
 def flatten_perspective(image):
+    """
+    Warps the image from the vehicle front-facing camera mapping hte road to a bird view perspective.
+
+    Parameters
+    ----------
+    image       : Image from the vehicle front-facing camera
+
+    Returns
+    -------
+    Warped image.
+    """
     # Get image dimensions
     (h, w) = (image.shape[0], image.shape[1])
     # Define source points
