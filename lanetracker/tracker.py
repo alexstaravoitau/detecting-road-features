@@ -95,3 +95,6 @@ class LaneTracker(object):
         unwarped_lane = cv2.warpPerspective(color_warp, unwarp_matrix, (image.shape[1], image.shape[0]))
         # Combine the result with the original image
         return cv2.addWeighted(image, 1, unwarped_lane, 0.3, 0)
+
+    def radius_of_curvature(self):
+        return np.average([self.left.radius_of_curvature(), self.right.radius_of_curvature()])

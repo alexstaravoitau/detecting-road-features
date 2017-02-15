@@ -27,9 +27,9 @@ class Line(object):
         y = self.points[:, 1]
         x = self.points[:, 0]
         fit_cr = np.polyfit(y * ym_per_pix, x * xm_per_pix, 2)
-        return ((1 + (2 * fit_cr[0] * 720 * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
+        return int(((1 + (2 * fit_cr[0] * 720 * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0]))
 
     def camera_distance(self):
         xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
         x = self.points[np.max(self.points[:, 1])][0]
-        return np.abs((self.w // 2 - x) * xm_per_pix)
+        return np.absolute((self.w // 2 - x) * xm_per_pix)
