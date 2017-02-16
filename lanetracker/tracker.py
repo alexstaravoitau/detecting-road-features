@@ -6,11 +6,21 @@ from lanetracker.line import Line
 
 
 class LaneTracker(object):
-    def __init__(self, first_frame, n_windows=9, window_margin=100, min_points=50):
+    """
+    Tracks the lane in a series of consecutive frames.
+    """
+
+    def __init__(self, first_frame, n_windows=9):
+        """
+        Initialises a tracker object.
+
+        Parameters
+        ----------
+        first_frame     : First frame of the frame series. We use it to get dimensions and initialise values.
+        n_windows       : Number of windows we use to track each lane edge.
+        """
         (self.h, self.w) = first_frame.shape
         self.win_n = n_windows
-        self.win_m = window_margin
-        self.min_points = min_points
         self.left = None
         self.right = None
         self.l_windows = []
@@ -19,7 +29,11 @@ class LaneTracker(object):
 
     def initialize_lines(self, frame):
         """
-        Finds starting points for left and right lines.
+        Finds starting points for left and right lines (e.g. lane edges) and initialises Window and Line objects.
+
+        Parameters
+        ----------
+        frame   : Frame to scan for lane edges.
         """
         # Take a histogram of the bottom half of the image
         histogram = np.sum(frame[int(self.h / 2):, :], axis=0)
@@ -58,6 +72,18 @@ class LaneTracker(object):
         )
 
     def scan_frame_with_windows(self, frame, windows):
+        """
+        Scans a frame using initialised windows in an attempt to track the lane edges.
+
+        Parameters
+        ----------
+        frame   : New frame
+        windows : Array of windows to use for scanning the frame.
+
+        Returns
+        -------
+        A tuple of arrays containing coordinates of points found in the specified windows.
+        """
         indices = np.empty([0], dtype=np.int)
         nonzero = frame.nonzero()
         for window in windows:
@@ -65,6 +91,13 @@ class LaneTracker(object):
         return (nonzero[1][indices], nonzero[0][indices])
 
     def process(self, frame):
+        """
+        Performs a full lane tracking pipeline on a frame.
+
+        Parameters
+        ----------
+        frame   : New frame to process.
+        """
         (x, y) = self.scan_frame_with_windows(frame, self.l_windows)
         self.left.fit(x, y)
 
@@ -72,6 +105,20 @@ class LaneTracker(object):
         self.right.fit(x, y)
 
     def draw_statistics_overlay(self, binary, lines=True, windows=True):
+        """
+        Draws an overlay with debugging information on a bird's-eye view of the road (e.g. after applying perspective
+        transform).
+
+        Parameters
+        ----------
+        binary  : Frame to overlay.
+        lines   : Flag indicating if we need to draw lines.
+        windows : Flag indicating if we need to draw windows.
+
+        Returns
+        -------
+        Frame with an debug information overlay.
+        """
         image = np.dstack((binary, binary, binary))
         if windows:
             for window in self.l_windows:
@@ -86,6 +133,18 @@ class LaneTracker(object):
         return image
 
     def draw_lane_overlay(self, image, unwarp_matrix):
+        """
+        Draws an overlay with tracked lane applying perspective unwarp to project it on the original frame.
+
+        Parameters
+        ----------
+        image           : Original frame.
+        unwarp_matrix   : Transformation matrix to unwarp the bird's eye view to initial frame.
+
+        Returns
+        -------
+        Frame with a lane overlay.
+        """
         # Create an image to draw the lines on
         color_warp = np.zeros_like(image).astype(np.uint8)
         points = np.vstack((self.left.points, np.flipud(self.right.points)))
@@ -97,4 +156,11 @@ class LaneTracker(object):
         return cv2.addWeighted(image, 1, unwarped_lane, 0.3, 0)
 
     def radius_of_curvature(self):
+        """
+        Calculates radius of the lane curvature by averaging curvature of the edge lines.
+
+        Returns
+        -------
+        Radius of the lane curvature in meters.
+        """
         return np.average([self.left.radius_of_curvature(), self.right.radius_of_curvature()])

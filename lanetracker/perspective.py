@@ -8,7 +8,7 @@ def flatten_perspective(image):
 
     Parameters
     ----------
-    image       : Image from the vehicle front-facing camera
+    image       : Image from the vehicle front-facing camera.
 
     Returns
     -------

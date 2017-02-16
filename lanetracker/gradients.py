@@ -8,14 +8,14 @@ def gradient_abs_value_mask(image, sobel_kernel=3, axis='x', threshold=(0, 255))
 
     Parameters
     ----------
-    image           : Image to mask
-    sobel_kernel    : Kernel of the Sobel gradient operation
-    axis            : Axis of the gradient, 'x' or 'y'
-    threshold       : Value threshold for it to make it to appear in the mask
+    image           : Image to mask.
+    sobel_kernel    : Kernel of the Sobel gradient operation.
+    axis            : Axis of the gradient, 'x' or 'y'.
+    threshold       : Value threshold for it to make it to appear in the mask.
 
     Returns
     -------
-    Image mask with 1s in activations and 0 in other pixels
+    Image mask with 1s in activations and 0 in other pixels.
     """
     # Take the absolute value of derivative in x or y given orient = 'x' or 'y'
     if axis == 'x':
@@ -36,13 +36,13 @@ def gradient_magnitude_mask(image, sobel_kernel=3, threshold=(0, 255)):
 
     Parameters
     ----------
-    image           : Image to mask
-    sobel_kernel    : Kernel of the Sobel gradient operation
-    threshold       : Magnitude threshold for it to make it to appear in the mask
+    image           : Image to mask.
+    sobel_kernel    : Kernel of the Sobel gradient operation.
+    threshold       : Magnitude threshold for it to make it to appear in the mask.
 
     Returns
     -------
-    Image mask with 1s in activations and 0 in other pixels
+    Image mask with 1s in activations and 0 in other pixels.
     """
     # Take the gradient in x and y separately
     sobel_x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
@@ -63,13 +63,13 @@ def gradient_direction_mask(image, sobel_kernel=3, threshold=(0, np.pi / 2)):
 
     Parameters
     ----------
-    image           : Image to mask
-    sobel_kernel    : Kernel of the Sobel gradient operation
-    threshold       : Direction threshold for it to make it to appear in the mask
+    image           : Image to mask.
+    sobel_kernel    : Kernel of the Sobel gradient operation.
+    threshold       : Direction threshold for it to make it to appear in the mask.
 
     Returns
     -------
-    Image mask with 1s in activations and 0 in other pixels
+    Image mask with 1s in activations and 0 in other pixels.
     """
     # Take the gradient in x and y separately
     sobel_x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
@@ -88,12 +88,12 @@ def color_threshold_mask(image, threshold=(0, 255)):
 
     Parameters
     ----------
-    image           : Image to mask
-    threshold       : Color intensity threshold
+    image           : Image to mask.
+    threshold       : Color intensity threshold.
 
     Returns
     -------
-    Image mask with 1s in activations and 0 in other pixels
+    Image mask with 1s in activations and 0 in other pixels.
     """
     mask = np.zeros_like(image)
     mask[(image > threshold[0]) & (image <= threshold[1])] = 1
@@ -106,12 +106,12 @@ def get_edges(image, separate_channels=False):
 
     Parameters
     ----------
-    image               : Image to mask
-    separate_channels   : Flag indicating if we need to put masks in different color channels
+    image               : Image to mask.
+    separate_channels   : Flag indicating if we need to put masks in different color channels.
 
     Returns
     -------
-    Image mask with 1s in activations and 0 in other pixels
+    Image mask with 1s in activations and 0 in other pixels.
     """
     # Convert to HLS color space and separate required channel
     hls = cv2.cvtColor(np.copy(image), cv2.COLOR_RGB2HLS).astype(np.float)

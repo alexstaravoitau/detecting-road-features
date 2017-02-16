@@ -14,9 +14,9 @@ class CameraCalibration(object):
 
         Parameters
         ----------
-        calibration_images          : Calibration images
-        pattern_size                : Shape of the calibration pattern
-        retain_calibration_images   : Flag indicating if we need to preserve calibration images
+        calibration_images          : Calibration images.
+        pattern_size                : Shape of the calibration pattern.
+        retain_calibration_images   : Flag indicating if we need to preserve calibration images.
         """
         self.camera_matrix = None
         self.dist_coefficients = None
@@ -30,11 +30,11 @@ class CameraCalibration(object):
 
         Parameters
         ----------
-        image       : Image to calibrate
+        image       : Image to calibrate.
 
         Returns
         -------
-        Calibrated image
+        Calibrated image.
         """
         if self.camera_matrix is not None and self.dist_coefficients is not None:
             return cv2.undistort(
@@ -49,9 +49,9 @@ class CameraCalibration(object):
 
         Parameters
         ----------
-        images                      : Set of calibration images
-        pattern_size                : Calibration pattern shape
-        retain_calibration_images   : Flag indicating if we need to preserve calibration images
+        images                      : Set of calibration images.
+        pattern_size                : Calibration pattern shape.
+        retain_calibration_images   : Flag indicating if we need to preserve calibration images.
         """
         # Prepare object points: (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         pattern = np.zeros((pattern_size[1] * pattern_size[0], 3), np.float32)
