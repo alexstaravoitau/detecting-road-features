@@ -3,6 +3,8 @@ import cv2
 import matplotlib.pyplot as plt
 from lanetracker.window import Window
 from lanetracker.line import Line
+from lanetracker.gradients import get_edges
+from lanetracker.perspective import flatten_perspective
 
 
 class LaneTracker(object):
@@ -19,7 +21,7 @@ class LaneTracker(object):
         first_frame     : First frame of the frame series. We use it to get dimensions and initialise values.
         n_windows       : Number of windows we use to track each lane edge.
         """
-        (self.h, self.w) = first_frame.shape
+        (self.h, self.w, _) = first_frame.shape
         self.win_n = n_windows
         self.left = None
         self.right = None
@@ -36,9 +38,11 @@ class LaneTracker(object):
         frame   : Frame to scan for lane edges.
         """
         # Take a histogram of the bottom half of the image
-        histogram = np.sum(frame[int(self.h / 2):, :], axis=0)
+        edges = get_edges(frame)
+        (flat_edges, _) = flatten_perspective(edges)
+        histogram = np.sum(flat_edges[int(self.h / 2):, :], axis=0)
 
-        nonzero = frame.nonzero()
+        nonzero = flat_edges.nonzero()
         # Create empty lists to receive left and right lane pixel indices
         l_indices = np.empty([0], dtype=np.int)
         r_indices = np.empty([0], dtype=np.int)
@@ -90,7 +94,7 @@ class LaneTracker(object):
             indices = np.append(indices, window.pixels_in(nonzero), axis=0)
         return (nonzero[1][indices], nonzero[0][indices])
 
-    def process(self, frame):
+    def process(self, frame, draw_lane=False, draw_statistics=False):
         """
         Performs a full lane tracking pipeline on a frame.
 
@@ -98,13 +102,37 @@ class LaneTracker(object):
         ----------
         frame   : New frame to process.
         """
-        (x, y) = self.scan_frame_with_windows(frame, self.l_windows)
+        edges = get_edges(frame)
+        (flat_edges, unwarp_matrix) = flatten_perspective(edges)
+        (x, y) = self.scan_frame_with_windows(flat_edges, self.l_windows)
         self.left.fit(x, y)
-
-        (x, y) = self.scan_frame_with_windows(frame, self.r_windows)
+        (x, y) = self.scan_frame_with_windows(flat_edges, self.r_windows)
         self.right.fit(x, y)
 
-    def draw_statistics_overlay(self, binary, lines=True, windows=True):
+        if draw_statistics:
+            edges = get_edges(frame, separate_channels=True)
+            debug_overlay = self.draw_debug_overlay(flatten_perspective(edges)[0])
+            top_overlay = self.draw_lane_overlay(flatten_perspective(frame)[0])
+            debug_overlay = cv2.resize(debug_overlay, (0, 0), fx=0.3, fy=0.3)
+            top_overlay = cv2.resize(top_overlay, (0, 0), fx=0.3, fy=0.3)
+            frame[:250, :, :] = frame[:250, :, :] * .4
+            (h, w, _) = debug_overlay.shape
+            frame[20:20 + h, 20:20 + w, :] = debug_overlay
+            frame[20:20 + h, 20 + 20 + w:20 + 20 + w + w, :] = top_overlay
+            text_x = 20 + 20 + w + w + 20
+            self.draw_text(frame, 'Radius of curvature:  {} m'.format(self.radius_of_curvature()), text_x, 80)
+            self.draw_text(frame, 'Distance (left):       {:.1f} m'.format(self.left.camera_distance()), text_x, 140)
+            self.draw_text(frame, 'Distance (right):      {:.1f} m'.format(self.right.camera_distance()), text_x, 200)
+
+        if draw_lane:
+            frame = self.draw_lane_overlay(frame, unwarp_matrix)
+
+        return frame
+
+    def draw_text(self, frame, text, x, y):
+        cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
+
+    def draw_debug_overlay(self, binary, lines=True, windows=True):
         """
         Draws an overlay with debugging information on a bird's-eye view of the road (e.g. after applying perspective
         transform).
@@ -119,7 +147,10 @@ class LaneTracker(object):
         -------
         Frame with an debug information overlay.
         """
-        image = np.dstack((binary, binary, binary))
+        if len(binary.shape) == 2:
+            image = np.dstack((binary, binary, binary))
+        else:
+            image = binary
         if windows:
             for window in self.l_windows:
                 coordinates = window.coordinates()
@@ -129,31 +160,33 @@ class LaneTracker(object):
                 cv2.rectangle(image, coordinates[0], coordinates[1], (1., 1., 0), 2)
         if lines:
             cv2.polylines(image, [self.left.points], False, (1., 0, 0), 2)
-            cv2.polylines(image, [self.right.points], False, (0, 0, 1.), 2)
-        return image
+            cv2.polylines(image, [self.right.points], False, (1., 0, 0), 2)
+        return image * 255
 
-    def draw_lane_overlay(self, image, unwarp_matrix):
+    def draw_lane_overlay(self, image, unwarp_matrix=None):
         """
         Draws an overlay with tracked lane applying perspective unwarp to project it on the original frame.
 
         Parameters
         ----------
         image           : Original frame.
-        unwarp_matrix   : Transformation matrix to unwarp the bird's eye view to initial frame.
+        unwarp_matrix   : Transformation matrix to unwarp the bird's eye view to initial frame. Defaults to `None` (in
+        which case no unwarping is applied).
 
         Returns
         -------
         Frame with a lane overlay.
         """
         # Create an image to draw the lines on
-        color_warp = np.zeros_like(image).astype(np.uint8)
+        overlay = np.zeros_like(image).astype(np.uint8)
         points = np.vstack((self.left.points, np.flipud(self.right.points)))
         # Draw the lane onto the warped blank image
-        cv2.fillPoly(color_warp, [points], (0, 255, 0))
-        # Warp the blank back to original image space using inverse perspective matrix (Minv)
-        unwarped_lane = cv2.warpPerspective(color_warp, unwarp_matrix, (image.shape[1], image.shape[0]))
+        cv2.fillPoly(overlay, [points], (0, 255, 0))
+        if unwarp_matrix is not None:
+            # Warp the blank back to original image space using inverse perspective matrix (Minv)
+            overlay = cv2.warpPerspective(overlay, unwarp_matrix, (image.shape[1], image.shape[0]))
         # Combine the result with the original image
-        return cv2.addWeighted(image, 1, unwarped_lane, 0.3, 0)
+        return cv2.addWeighted(image, 1, overlay, 0.3, 0)
 
     def radius_of_curvature(self):
         """
@@ -163,4 +196,4 @@ class LaneTracker(object):
         -------
         Radius of the lane curvature in meters.
         """
-        return np.average([self.left.radius_of_curvature(), self.right.radius_of_curvature()])
+        return int(np.average([self.left.radius_of_curvature(), self.right.radius_of_curvature()]))
