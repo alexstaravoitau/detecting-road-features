@@ -64,16 +64,8 @@ class LaneTracker(object):
             r_indices = np.append(r_indices, r_window.pixels_in(nonzero), axis=0)
             self.l_windows.append(l_window)
             self.r_windows.append(r_window)
-        self.left = Line(
-            x=nonzero[1][l_indices],
-            y=nonzero[0][l_indices],
-            h=self.h, w = self.w
-        )
-        self.right = Line(
-            x=nonzero[1][r_indices],
-            y=nonzero[0][r_indices],
-            h=self.h, w = self.w
-        )
+        self.left = Line(x=nonzero[1][l_indices], y=nonzero[0][l_indices], h=self.h, w = self.w)
+        self.right = Line(x=nonzero[1][r_indices], y=nonzero[0][r_indices], h=self.h, w = self.w)
 
     def scan_frame_with_windows(self, frame, windows):
         """
@@ -96,20 +88,26 @@ class LaneTracker(object):
             window_x = window.mean_x
         return (nonzero[1][indices], nonzero[0][indices])
 
-    def process(self, frame, draw_lane=False, draw_statistics=False):
+    def process(self, frame, draw_lane=True, draw_statistics=True):
         """
         Performs a full lane tracking pipeline on a frame.
 
         Parameters
         ----------
-        frame   : New frame to process.
+        frame               : New frame to process.
+        draw_lane           : Flag indicating if we need to draw the lane on top of the frame.
+        draw_statistics     : Flag indicating if we need to render the debug information on top of the frame.
+
+        Returns
+        -------
+        Resulting frame.
         """
         edges = get_edges(frame)
         (flat_edges, unwarp_matrix) = flatten_perspective(edges)
-        (x, y) = self.scan_frame_with_windows(flat_edges, self.l_windows)
-        self.left.fit(x, y)
-        (x, y) = self.scan_frame_with_windows(flat_edges, self.r_windows)
-        self.right.fit(x, y)
+        (l_x, l_y) = self.scan_frame_with_windows(flat_edges, self.l_windows)
+        self.left.process_points(l_x, l_y)
+        (r_x, r_y) = self.scan_frame_with_windows(flat_edges, self.r_windows)
+        self.right.process_points(r_x, r_y)
 
         if draw_statistics:
             edges = get_edges(frame, separate_channels=True)
@@ -161,8 +159,8 @@ class LaneTracker(object):
                 coordinates = window.coordinates()
                 cv2.rectangle(image, coordinates[0], coordinates[1], (1., 1., 0), 2)
         if lines:
-            cv2.polylines(image, [self.left.points], False, (1., 0, 0), 2)
-            cv2.polylines(image, [self.right.points], False, (1., 0, 0), 2)
+            cv2.polylines(image, [self.left.get_points()], False, (1., 0, 0), 2)
+            cv2.polylines(image, [self.right.get_points()], False, (1., 0, 0), 2)
         return image * 255
 
     def draw_lane_overlay(self, image, unwarp_matrix=None):
@@ -181,7 +179,7 @@ class LaneTracker(object):
         """
         # Create an image to draw the lines on
         overlay = np.zeros_like(image).astype(np.uint8)
-        points = np.vstack((self.left.points, np.flipud(self.right.points)))
+        points = np.vstack((self.left.get_points(), np.flipud(self.right.get_points())))
         # Draw the lane onto the warped blank image
         cv2.fillPoly(overlay, [points], (0, 255, 0))
         if unwarp_matrix is not None:
