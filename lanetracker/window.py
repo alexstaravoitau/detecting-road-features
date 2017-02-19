@@ -44,12 +44,17 @@ class Window(object):
         -------
         Array of indices of the pixels within this window.
         """
+        if x is not None:
+            self.x = x
         win_indices = (
             (nonzero[0] >= self.y1) & (nonzero[0] < self.y2) &
             (nonzero[1] >= self.x - self.m) & (nonzero[1] < self.x + self.m)
         ).nonzero()[0]
         if len(win_indices) > self.tolerance:
-            self.x = np.int(np.mean(nonzero[1][win_indices]))
+            self.mean_x = np.int(np.mean(nonzero[1][win_indices]))
+        else:
+            self.mean_x = self.x
+
         return win_indices
 
     def coordinates(self):

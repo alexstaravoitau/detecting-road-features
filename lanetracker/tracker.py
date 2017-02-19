@@ -90,8 +90,10 @@ class LaneTracker(object):
         """
         indices = np.empty([0], dtype=np.int)
         nonzero = frame.nonzero()
+        window_x = None
         for window in windows:
-            indices = np.append(indices, window.pixels_in(nonzero), axis=0)
+            indices = np.append(indices, window.pixels_in(nonzero, window_x), axis=0)
+            window_x = window.mean_x
         return (nonzero[1][indices], nonzero[0][indices])
 
     def process(self, frame, draw_lane=False, draw_statistics=False):
