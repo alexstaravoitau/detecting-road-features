@@ -25,6 +25,19 @@ class Line(object):
         self.coefficients = deque(maxlen=5)
         self.process_points(x, y)
 
+    def process_points(self, x, y):
+        """
+        Fits a polynomial if there is enough points to try and approximate a line and updates a queue of coefficients.
+
+        Parameters
+        ----------
+        x   : Array of x coordinates for pixels representing a line.
+        y   : Array of y coordinates for pixels representing a line.
+        """
+        enough_points = len(y) > 0 and np.max(y) - np.min(y) > 450
+        if enough_points or len(self.coefficients) == 0:
+            self.fit(x, y)
+
     def get_points(self):
         """
         Generates points of the current best fit line.
@@ -35,8 +48,9 @@ class Line(object):
         current best approximation of a line.
         """
         y = np.linspace(0, self.h - 1, self.h)
+        current_fit = self.averaged_fit()
         return np.stack((
-            self.current_fit[0] * y ** 2 + self.current_fit[1] * y + self.current_fit[2],
+            current_fit[0] * y ** 2 + current_fit[1] * y + current_fit[2],
             y
         )).astype(np.int).T
 
@@ -74,8 +88,9 @@ class Line(object):
         ym_per_pix = 27 / 720  # meters per pixel in y dimension
         xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
         # Fit new polynomials to x,y in world space
-        y = self.points[:, 1]
-        x = self.points[:, 0]
+        points = self.get_points()
+        y = points[:, 1]
+        x = points[:, 0]
         fit_cr = np.polyfit(y * ym_per_pix, x * xm_per_pix, 2)
         return int(((1 + (2 * fit_cr[0] * 720 * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0]))
 
@@ -88,6 +103,7 @@ class Line(object):
         -------
         Estimated distance to camera in meters.
         """
+        points = self.get_points()
         xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
-        x = self.points[np.max(self.points[:, 1])][0]
+        x = points[np.max(points[:, 1])][0]
         return np.absolute((self.w // 2 - x) * xm_per_pix)
