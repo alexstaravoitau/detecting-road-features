@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 
 
 class Line(object):
@@ -20,8 +21,9 @@ class Line(object):
         # polynomial coefficients for the most recent fit
         self.h = h
         self.w = w
-        self.current_fit = self.fit(x, y)
-        self.points = self.get_points()
+        self.frame_impact = 0
+        self.coefficients = deque(maxlen=5)
+        self.process_points(x, y)
 
     def get_points(self):
         """
@@ -38,6 +40,16 @@ class Line(object):
             y
         )).astype(np.int).T
 
+    def averaged_fit(self):
+        """
+        Returns coefficients for a line averaged across last 5 points' updates.
+
+        Returns
+        -------
+        Array of polynomial coefficients.
+        """
+        return np.array(self.coefficients).mean(axis=0)
+
     def fit(self, x, y):
         """
         Fits a 2nd degree polynomial to provided points and returns its coefficients.
@@ -46,12 +58,8 @@ class Line(object):
         ----------
         x   : Array of x coordinates for pixels representing a line.
         y   : Array of y coordinates for pixels representing a line.
-
-        Returns
-        -------
-        2nd degree polynomial coefficients.
         """
-        return np.polyfit(y, x, 2)
+        self.coefficients.append(np.polyfit(y, x, 2))
 
     def radius_of_curvature(self):
         """
