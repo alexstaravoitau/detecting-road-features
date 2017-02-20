@@ -57,7 +57,7 @@ As some of the calibration images did not have chessboard fully visible, we will
   <img src="assets/calibration_1.png" alt="Original vs. calibrated images."/>
 </p>
 
-For implementation details check `CameraCalibration` class in `lanetracker/camera.py`.
+> For implementation details check `CameraCalibration` class in `lanetracker/camera.py`.
 
 ## Edge detection
 We use a set of gradient and color based thresholds to detect edges in the frame.
@@ -101,7 +101,7 @@ We apply a combination of all these filters as an edge detection pipeline. Here 
   <img src="assets/edges.png" alt="Original vs. highlighted edges."/>
 </p>
 
-For implementation details check functions in `lanetracker/gradients.py`.
+> For implementation details check functions in `lanetracker/gradients.py`.
 
 ## Perspective tranform
 I manually pin-pointed source and destination points in the camera frames, so perspective transform simply maps the following coordinates.
@@ -129,7 +129,7 @@ This is what it looks like for an arbitrary test image.
   <img src="assets/perspective.png" alt="Original vs. bird's eye view."/>
 </p>
 
-For implementation details check functions in `lanetracker/perspective.py`.
+> For implementation details check functions in `lanetracker/perspective.py`.
 
 ## Approximate boundaries
 We then scan the resulting frame from bottom to top trying to isolate pixels that could be representing lane boundaries. What we are trying to detect is two lines (each represented by `Line` class) that would make up lane boundaries. For each of those lines we have a set of _windows_ (represented by `Window` class). We scan the frame with those windows, collecting non-zero pixels within window bounds. Once we reach the top, we try to fit a second order polynomial into collected points. This polynomial coefficients would represent a single lane boundary.
@@ -140,7 +140,7 @@ Here is a debug image representing the process. On the left is the _original_ im
   <img src="assets/detection.png" alt="Boundary detection pipeline."/>
 </p>
 
-For implementation details check `LaneTracker` class in `lanetracker/tracker.py`, `Window` class in `lanetracker/window.py` and `Line` class in `lanetracker/line.py`.
+> For implementation details check `LaneTracker` class in `lanetracker/tracker.py`, `Window` class in `lanetracker/window.py` and `Line` class in `lanetracker/line.py`.
 
 ## Approximate properties
 We can now approximate some of the road properties and vehicle spacial position using known real world dimensions. Here we assume that the visible vertical part of the bird's eye view warped frame is **27 meters**, based on the known length of the dashed lines on american roads. We also assume that lane width is around **3.7 meters**, again, based on american regulations.
@@ -185,7 +185,7 @@ We can also approximate vehicle position within the lane. This rountine would ca
 distance = np.absolute((w // 2 - x[np.max(y)]) * xm_per_pix)
 ```
 
-For implementation details check `Line` class in `lanetracker/line.py`.
+> For implementation details check `Line` class in `lanetracker/line.py`.
 
 ## Video
 
@@ -215,6 +215,8 @@ This approach proved iself to work reasonably well, you can check out the [full 
 <p align="center">
   <img src="assets/project_video_sample.gif" alt="Sample of the project video."/>
 </p>
+
+> For implementation details check `LaneTracker` class in `lanetracker/tracker.py`.
 
 ## Results
 This clearly is a very naive way of detecting and tracking the lane, as it is likely to fail in too many scenarios:
