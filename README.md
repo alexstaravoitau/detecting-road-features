@@ -51,16 +51,10 @@ Now that we have camera calibration matrix and distortion coefficients we can us
 corrected_image = cv2.undistort(image, self.camera_matrix, self.dist_coefficients, None, self.camera_matrix)
 ```
 
-As some of the calibration images did not have chessboard fully visible, we will use those for verifying aforementioned calibration pipeline.
+As some of the calibration images did not have chessboard fully visible, we will use one of those for verifying aforementioned calibration pipeline.
 
 <p align="center">
   <img src="assets/calibration_1.png" alt="Original vs. calibrated images."/>
-</p>
-<p align="center">
-  <img src="assets/calibration_2.png" alt="Original vs. calibrated images."/>
-</p>
-<p align="center">
-  <img src="assets/calibration_3.png" alt="Original vs. calibrated images."/>
 </p>
 
 For implementation details check `CameraCalibration` class in `lanetracker/camera.py`.
