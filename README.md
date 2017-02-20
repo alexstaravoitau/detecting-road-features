@@ -19,7 +19,7 @@ The goal of this project was to prepare a processing pipeline to identify the la
 * **Approximate road properties and vehicle position.** We also provide a rough estimate on road curvature and vehicle position within the lane using known road dimensions.
 
 ## Camera calibration
-I first prepare a `pattern` variable holding _object points_ in `(x, y, z)` coordinate space of the chessboard, where `x` and `y` are horizontal and vertical indices of the chessboard squares, and `z` is always `0`. Those _object points_ are going to be the same for each calibration image, as we expect the same chessboard in each. 
+We are going to use a set of OpenCV routines in order to apply correction for camera distortion. I first prepare a `pattern` variable holding _object points_ in `(x, y, z)` coordinate space of the chessboard, where `x` and `y` are horizontal and vertical indices of the chessboard squares, and `z` is always `0`. Those _object points_ are going to be the same for each calibration image, as we expect the same chessboard in each. 
 
 ```python
 pattern = np.zeros((pattern_size[1] * pattern_size[0], 3), np.float32)
