@@ -95,7 +95,7 @@ hls = cv2.cvtColor(np.copy(image), cv2.COLOR_RGB2HLS).astype(np.float)
 s_channel = hls[:, :, 2]
 ```
 
-We apply a combination of all these filters as an edge detection pipeline. Here is an example of its output, where pixels masked by color are in blue, and pixels masked by gradient are in green.
+We apply a combination of all these filters as an edge detection pipeline. Here is an example of its output, where pixels masked by color are blue, and pixels masked by gradient are green.
 
 <p align="center">
   <img src="assets/edges.png" alt="Original vs. highlighted edges."/>
