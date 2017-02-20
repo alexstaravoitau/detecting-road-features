@@ -34,7 +34,7 @@ class Line(object):
         x   : Array of x coordinates for pixels representing a line.
         y   : Array of y coordinates for pixels representing a line.
         """
-        enough_points = len(y) > 0 and np.max(y) - np.min(y) > 450
+        enough_points = len(y) > 0 and np.max(y) - np.min(y) > self.h * .625
         if enough_points or len(self.coefficients) == 0:
             self.fit(x, y)
 
