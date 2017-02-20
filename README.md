@@ -11,15 +11,15 @@
 | `lanetracker/line.py` 	   | `Line` class representing a single lane boundary line. |
 | `lanetracker/window.py`      | `Window` class representing a scanning window used to detect points likely to represent lines. |
 
-The goal of this project was to prepare a processing pipeline to identify the lane boundaries in a video. The pipeline includes the following steps we apply to each frame, described in detail further:
-* **Camera calibration.** To cater for inevitable camera distortions, we calculate camera calibration using a set of calibration chessboard images, and applying resulting calibration bias to each of the frames.
+The goal of this project was to prepare a processing pipeline to identify the lane boundaries in a video. The pipeline includes the following steps that we apply to each frame:
+* **Camera calibration.** To cater for inevitable camera distortions, we calculate camera calibration using a set of calibration chessboard images, and applying correction to each of the frames.
 * **Edge detection with gradient and color thresholds.** We then use a bunch of metrics based on gradients and color information to highlight edges in the frame.
 * **Perspective transformation.** To make lane boundaries extraction easier we apply a perspective transformation, resulting in something similar to a bird's eye view of the road ahead of the vehicle.
-* **Fitting boundary lines.** We then scan resulting frame for pixels that could belong to lane boundaries, and try to approximate lines into those pixels.
-* **Approximate road properties and vehicle position.** We can now provide a rough estimate on road curvature and vehicle position in the lane using known road dimensions.
+* **Fitting boundary lines.** We then scan resulting frame for pixels that could belong to lane boundaries and try to approximate lines into those pixels.
+* **Approximate road properties and vehicle position.** We also provide a rough estimate on road curvature and vehicle position within the lane using known road dimensions.
 
 ## Camera calibration
-I first prepare a `pattern` variable holding _object points_ in `(x, y, z)` coordinate space of the chessboard, where `x` and `y` are horizontal and vertical indices of the chessboard squares, and `z` is always `0`. Those _object points_ are going to be the same for each calibration image, as we expect the same chessboard on each. 
+I first prepare a `pattern` variable holding _object points_ in `(x, y, z)` coordinate space of the chessboard, where `x` and `y` are horizontal and vertical indices of the chessboard squares, and `z` is always `0`. Those _object points_ are going to be the same for each calibration image, as we expect the same chessboard in each. 
 
 ```python
 pattern = np.zeros((pattern_size[1] * pattern_size[0], 3), np.float32)
@@ -66,7 +66,7 @@ As some of the calibration images did not have chessboard fully visible, we will
 For implementation details check `CameraCalibration` class in `lanetracker/camera.py`.
 
 ## Edge detection
-We use a set of gradient and color based thresholds to detect edges on the frame.
+We use a set of gradient and color based thresholds to detect edges in the frame.
 
 ### Gradient absolute value
 For absolute gradient value we simply apply a threshold to `cv2.Sobel()` output for each axis.
@@ -143,7 +143,7 @@ We then scan the resulting frame from bottom to top trying to isolate pixels tha
 Here is a debug image representing the process. On the left is the _original_ image after we apply camera calibration and perspective transform. On the right is the same image, but with edges highlighted in green and blue, scanning windows boundaries highlighted in yellow, and a second order polynomial approximation of collected points in red.
 
 <p align="center">
-  <img src="assets/perspective.png" alt="Original vs. bird's eye view."/>
+  <img src="assets/detection.png" alt="Boundary detection pipeline."/>
 </p>
 
 For implementation details check `LaneTracker` class in `lanetracker/tracker.py`, `Window` class in `lanetracker/window.py` and `Line` class in `lanetracker/line.py`.
@@ -160,19 +160,19 @@ xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
 Previously we approximated each lane boundary as a second order polynomial curve, which can be represented with the following equation.
 
 <p align="center">
-  <img src="assets/poly_2.png" alt="Second order polynomial"/>
+  <img src="assets/poly_2.png" alt="Second order polynomial" height="80"/>
 </p>
 
 As per [this tutorial](http://www.intmath.com/applications-differentiation/8-radius-curvature.php), we can get the radius of curvature in an arbitrary point using the following equation.
 
 <p align="center">
-  <img src="assets/curve_grad.png" alt="Radius equation"/>
+  <img src="assets/curve_grad.png" alt="Radius equation" height="80"/>
 </p>
 
 If we calculate actual derivatives of the second order polynomial, we get the following.
 
 <p align="center">
-  <img src="assets/curve_coef.png" alt="Radius equation"/>
+  <img src="assets/curve_coef.png" alt="Radius equation" height="80"/>
 </p>
 
 Therefore, given `x` and `y` variables contain coordinates of points making up the curve, we can get curvature radius as follows.
@@ -231,7 +231,7 @@ This clearly is a very naive way of detecting and tracking the lane, as it is li
 * Obstruction by other vehicles.
 * ...
 
-Nevertheless this project is a good representation of what can be done by simply inspecting pixel values' gradients and color spaces. It shows that even with these limited tools we can extract a lot of useful information from an image, and that this information can potentially be used as an input to more robust algorithms.
+Nevertheless this project is a good representation of what can be done by simply inspecting pixel values' gradients and color spaces. It shows that even with these limited tools we can extract a lot of useful information from an image, and that this information can potentially be used as an input to more sophisticated algorithms.
 
 
 
