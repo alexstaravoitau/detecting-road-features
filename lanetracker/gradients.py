@@ -32,7 +32,7 @@ def gradient_abs_value_mask(image, sobel_kernel=3, axis='x', threshold=(0, 255))
 
 def gradient_magnitude_mask(image, sobel_kernel=3, threshold=(0, 255)):
     """
-    Masks the image based on gradient magnitude .
+    Masks the image based on gradient magnitude.
 
     Parameters
     ----------
