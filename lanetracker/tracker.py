@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 from lanetracker.window import Window
 from lanetracker.line import Line
 from lanetracker.gradients import get_edges
