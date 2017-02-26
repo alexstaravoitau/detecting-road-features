@@ -1,74 +1,76 @@
 import numpy as np
 import cv2
-from sklearn.preprocessing import StandardScaler
 from skimage.feature import hog
 from skimage.transform import resize
+from scipy.ndimage.measurements import label
+from vehicletracker.feature_extraction import extract_features
 
-# Define a function to return HOG features and visualization
-def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, feature_vec=True):
-    return hog(img, orientations=orient, pixels_per_cell=(pix_per_cell, pix_per_cell),
-        cells_per_block=(cell_per_block, cell_per_block), transform_sqrt=True,
-        visualise=vis, feature_vector=feature_vec)
+class VehicleTracker(object):
 
-# Define a function to compute binned color features
-def bin_spatial(img, size=(16, 16)):
-    # Use cv2.resize().ravel() to create the feature vector
-    features = cv2.resize(img, size).ravel()
-    # Return the feature vector
-    return features
+    def __init__(self, scaler, classifier):
+        self.scaler = scaler
+        self.classifier = classifier
+        self.detections = np.empty([0, 4], dtype=np.int64)
 
-# Define a function to compute color histogram features
-def color_hist(img, nbins=16, bins_range=(0, 256)):
-    # Compute the histogram of the color channels separately
-    channel1_hist = np.histogram(img[:,:,0], bins=nbins, range=bins_range)
-    channel2_hist = np.histogram(img[:,:,1], bins=nbins, range=bins_range)
-    channel3_hist = np.histogram(img[:,:,2], bins=nbins, range=bins_range)
-    # Concatenate the histograms into a single feature vector
-    hist_features = np.concatenate((channel1_hist[0], channel2_hist[0], channel3_hist[0]))
-    # Return the individual histograms, bin_centers and feature vector
-    return hist_features
+    def process(self, frame, draw_detections=True):
+        self.detect_vehicles(frame, highlight_detections=draw_detections)
+        return frame
 
-# Define a function to extract features from a list of images
-def extract_features(images, orient=10, pix_per_cell=8, cell_per_block=2):
-    # Create a list to append feature vectors to
-    features = []
-    # Iterate through the list of images
-    for image in images:
-        file_features = []
-        #feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
-        feature_image = np.copy(image)
+    def detect_vehicles(self, image, highlight_detections=False):
+        found_coordinates = np.empty([0, 4], dtype=np.int64)
+        for scale in np.linspace(.2, 1., 5):
+            regions, regions_coordinates = self.get_regions(image, scale=scale, k=64)
+            predictions = self.classifier.predict(self.scaler.transform(extract_features(regions)))
+            # print(regions.shape[0], 'regions,', int(predictions.sum()), 'with cars.')
+            found_coordinates = np.append(found_coordinates, regions_coordinates[predictions == 1], axis=0)
 
-        spatial_features = bin_spatial(feature_image)
-        file_features.append(spatial_features)
+        self.detections, self.heatmap = self.merge_detections(found_coordinates, image.shape)
+        if highlight_detections:
+            for c in self.detections:
+                cv2.rectangle(image, (c[0], c[1]), (c[2], c[3]), (0, 0, 255), 2)
 
-        hist_features = color_hist(feature_image)
-        file_features.append(hist_features)
+    def get_regions(self, image, scale=1., k=64):
+        (h, w, d) = image.shape
+        scaled_image = resize((image / 255.).astype(np.float64), (h * scale, w * scale, d), preserve_range=True).astype(np.float32)
+        (h, w, d) = scaled_image.shape
+        regions = np.empty([0, k, k, d], dtype=np.float32)
+        regions_coordinates = np.empty([0, 4], dtype=np.int)
+        s = k // 2
+        y_range, y_s = np.linspace(h / 2, h - k, (h + s) // (2 * s), retstep=True)
+        x_range, x_s = np.linspace(0, w - k, (w + s) // s, retstep=True)
+        for i in y_range.astype(np.int):
+            for j in x_range.astype(np.int):
+                regions = np.append(regions, [scaled_image[i:i+k, j:j+k, :]], axis=0)
+                regions_coordinates = np.append(regions_coordinates, [[j, i, j+k, i+k]], axis=0)
 
-        hog_features = []
-        for channel in range(feature_image.shape[2]):
-            hog_features.append(get_hog_features(feature_image[:,:,channel],
-                                orient, pix_per_cell, cell_per_block,
-                                vis=False, feature_vec=True))
-        hog_features = np.ravel(hog_features)
-        file_features.append(hog_features)
+        return regions.astype(np.float32), (regions_coordinates / scale).astype(np.int)
 
-        # Append the new feature vector to the features list
-        features.append(np.concatenate(file_features))
-    # Return list of feature vectors
-    return features
+    def add_heat(self, heatmap, coordinates):
+        # Iterate through list of bboxes
+        for c in coordinates:
+            # Add += 1 for all pixels inside each detected region
+            # Assuming each set of coordinates takes the form (x1, y1, x2, y2)
+            heatmap[c[1]:c[3], c[0]:c[2]] += 1
+        # Return updated heatmap
+        return heatmap
 
-def get_regions(image, scale=1., k=64):
-    (h, w, d) = image.shape
-    scaled_image = resize(image, (h * scale, w * scale, d), preserve_range=True).astype(np.float32)
-    (h, w, d) = scaled_image.shape
-    regions = np.empty([0, k, k, d], dtype=np.float32)
-    regions_coordinates = np.empty([0, 4], dtype=np.int)
-    s = k // 2
-    y_range, y_s = np.linspace(h / 2, h - k, (h + s) // (2 * s), retstep=True)
-    x_range, x_s = np.linspace(0, w - k, (w + s) // s, retstep=True)
-    for i in y_range.astype(np.int):
-        for j in x_range.astype(np.int):
-            regions = np.append(regions, [scaled_image[i:i+k, j:j+k, :]], axis=0)
-            regions_coordinates = np.append(regions_coordinates, [[j, i, j+k, i+k]], axis=0)
-
-    return regions.astype(np.float32), (regions_coordinates / scale).astype(np.int)
+    def merge_detections(self, detected_regions, image_shape, threshold=2):
+        heatmap = np.zeros((image_shape[0], image_shape[1])).astype(np.float)
+        # Add heat to each box in box list
+        heatmap = self.add_heat(heatmap, detected_regions)
+        # Apply threshold to help remove false positives
+        heatmap[heatmap < threshold] = 0
+        heatmap = np.clip(heatmap, 0, 255)
+        labels = label(heatmap)
+        features = np.empty([0, 4], dtype=np.int64)
+        # Iterate through all detected cars
+        for car in range(1, labels[1] + 1):
+            # Find pixels with each car_number label value
+            nonzero = (labels[0] == car).nonzero()
+            features = np.append(
+                features,
+                [[np.min(nonzero[1]), np.min(nonzero[0]), np.max(nonzero[1]), np.max(nonzero[0])]],
+                axis=0
+            )
+        # Return the image
+        return (features, heatmap)
