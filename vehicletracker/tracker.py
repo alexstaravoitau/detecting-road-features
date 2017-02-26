@@ -3,7 +3,7 @@ import cv2
 from skimage.feature import hog
 from skimage.transform import resize
 from scipy.ndimage.measurements import label
-from vehicletracker.feature_extraction import extract_features
+from vehicletracker.features import FeatureExtractor
 
 class VehicleTracker(object):
 
@@ -17,33 +17,38 @@ class VehicleTracker(object):
         return frame
 
     def detect_vehicles(self, image, highlight_detections=False):
+        scales = np.linspace(.3, .8, 8)
+        y_start = np.linspace(.55, .65, 8)[::-1]
         found_coordinates = np.empty([0, 4], dtype=np.int64)
-        for scale in np.linspace(.2, 1., 5):
-            regions, regions_coordinates = self.get_regions(image, scale=scale, k=64)
-            predictions = self.classifier.predict(self.scaler.transform(extract_features(regions)))
-            # print(regions.shape[0], 'regions,', int(predictions.sum()), 'with cars.')
-            found_coordinates = np.append(found_coordinates, regions_coordinates[predictions == 1], axis=0)
+        for scale, y in zip(scales, y_start):
+            regions_coordinates = self.get_regions(image, y, scale=scale, k=64)
+            found_coordinates = np.append(found_coordinates, regions_coordinates, axis=0)
 
         self.detections, self.heatmap = self.merge_detections(found_coordinates, image.shape)
         if highlight_detections:
             for c in self.detections:
                 cv2.rectangle(image, (c[0], c[1]), (c[2], c[3]), (0, 0, 255), 2)
 
-    def get_regions(self, image, scale=1., k=64):
+    def get_regions(self, image, y, scale=1., k=64):
         (h, w, d) = image.shape
-        scaled_image = resize((image / 255.).astype(np.float64), (h * scale, w * scale, d), preserve_range=True).astype(np.float32)
+        scaled_image = resize((image / 255.).astype(np.float64), (int(h * scale), int(w * scale), d), preserve_range=True).astype(np.float32)
+
+        extractor = FeatureExtractor(scaled_image)
+
         (h, w, d) = scaled_image.shape
         regions = np.empty([0, k, k, d], dtype=np.float32)
         regions_coordinates = np.empty([0, 4], dtype=np.int)
+        y = int(h*y)
         s = k // 2
-        y_range, y_s = np.linspace(h / 2, h - k, (h + s) // (2 * s), retstep=True)
-        x_range, x_s = np.linspace(0, w - k, (w + s) // s, retstep=True)
-        for i in y_range.astype(np.int):
-            for j in x_range.astype(np.int):
-                regions = np.append(regions, [scaled_image[i:i+k, j:j+k, :]], axis=0)
-                regions_coordinates = np.append(regions_coordinates, [[j, i, j+k, i+k]], axis=0)
+        x_range = np.linspace(0, w - k, (w + s) // s)
+        for x in x_range.astype(np.int):
+            features = extractor.feature_vector(x, y, k)
+            features = self.scaler.transform(np.array(features).reshape(1, -1))
 
-        return regions.astype(np.float32), (regions_coordinates / scale).astype(np.int)
+            if self.classifier.predict(features)[0] == 1:
+                regions_coordinates = np.append(regions_coordinates, [[x, y, x + k, y + k]], axis=0)
+
+        return (regions_coordinates / scale).astype(np.int)
 
     def add_heat(self, heatmap, coordinates):
         # Iterate through list of bboxes
