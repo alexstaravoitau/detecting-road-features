@@ -3,8 +3,21 @@ import cv2
 from skimage.feature import hog
 
 class FeatureExtractor(object):
+    """
+    Helps extracting features from an image in regions.
+    """
 
     def __init__(self, image, orient=10, pix_per_cell=8, cell_per_block=2):
+        """
+        Initialises an instance.
+
+        Parameters
+        ----------
+        image           : Image to extract features from.
+        orient          : HoG orientations.
+        pix_per_cell    : HoG pixels per cell.
+        cell_per_block  : HoG cells per block.
+        """
         self.image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
         (self.h, self.w, self.d) = self.image.shape
         self.hog_features = []
@@ -18,6 +31,19 @@ class FeatureExtractor(object):
         self.hog_features = np.asarray(self.hog_features)
 
     def hog(self, x, y, k):
+        """
+        Gets HoG features for specified region of the image.
+
+        Parameters
+        ----------
+        x   : Image X coordinate.
+        y   : Image Y coordinate.
+        k   : Region size (single value, side of a square region).
+
+        Returns
+        -------
+        HoG vector for the specified region.
+        """
         hog_k = (k // self.pix_per_cell) - 1
         hog_x = max((x // self.pix_per_cell) - 1, 0)
         hog_x = self.hog_features.shape[2] - hog_k if hog_x + hog_k > self.hog_features.shape[2] else hog_x
@@ -25,12 +51,36 @@ class FeatureExtractor(object):
         hog_y = self.hog_features.shape[1] - hog_k if hog_y + hog_k > self.hog_features.shape[1] else hog_y
         return np.ravel(self.hog_features[:, hog_y:hog_y+hog_k, hog_x:hog_x+hog_k, :, :, :])
 
-    # Define a function to compute binned color features
     def bin_spatial(self, image, size=(16, 16)):
+        """
+        Computes spatial vector.
+
+        Parameters
+        ----------
+        image   : Image to get spatial vector for.
+        size    : Kernel size.
+
+        Returns
+        -------
+        Spatial vector.
+        """
         return cv2.resize(image, size).ravel()
 
     # Define a function to compute color histogram features
     def color_hist(self, image, nbins=16, bins_range=(0, 256)):
+        """
+        Computes color histogram features vector.
+
+        Parameters
+        ----------
+        image       : Image to get spatial vector for.
+        nbins       : Number of histogram bins.
+        bins_range  : Range for bins.
+
+        Returns
+        -------
+        Color histogram feature vector.
+        """
         # Compute the histogram of the color channels separately
         channel1_hist = np.histogram(image[:, :, 0], bins=nbins, range=bins_range)
         channel2_hist = np.histogram(image[:, :, 1], bins=nbins, range=bins_range)
@@ -39,6 +89,19 @@ class FeatureExtractor(object):
         return np.concatenate((channel1_hist[0], channel2_hist[0], channel3_hist[0]))
 
     def feature_vector(self, x=0, y=0, k=64):
+        """
+        Calculates combined feature vector based on spatial, color histogram and Hog features for specified region.
+
+        Parameters
+        ----------
+        x   : Image X coordinate.
+        y   : Image Y coordinate.
+        k   : Region size (single value, side of a square region).
+
+        Returns
+        -------
+        Combined concatenated vector.
+        """
         features = []
 
         spatial_features = self.bin_spatial(self.image[y:y + k, x:x + k, :])
