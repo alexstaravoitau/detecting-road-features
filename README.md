@@ -134,7 +134,7 @@ I trained a Linear SVC (`sklearn` implementation), using feature extractor descr
 I use a sliding window approach with a couple of additional constraints. For instance, we can approximate vehicle size we expect in different frame regions, which makes searching a bit easier.
 
 <p align="center">
-  <img src="assets/hog.jpg" alt="Window sizes dependent on location"/>
+  <img src="assets/window.jpg" alt="Window sizes dependent on location"/>
   Window sizes dependent on location
 </p>
 
@@ -142,7 +142,7 @@ Since frame segments must be of various size, and we eventually need to use 64×
 
 ```python
 # Scan with 64×64 window across 8 differently scaled images, ranging from 30% to 80% of the original frame size. 
-for scale in np.linspace(.3, .8, 8):
+for (scale, y) in zip(np.linspace(.3, .8, 4), np.logspace(.6, .55, 4)):
     # Scale the original frame
     scaled = resize(image, (image.shape[0] * scale, image.shape[1] * scale, image.shape[2]))
     # Prepare a feature extractor
@@ -151,8 +151,8 @@ for scale in np.linspace(.3, .8, 8):
     # Target stride is no more than 32 (half the size of the window), 
     # making sure windows are equally distributed along the frame width.
     for x in np.linspace(0, w - k, (w + 32) // 32):
-        # Extract features for current window. I use h/2 as y coordinate here for simplicity.
-        features = extractor.feature_vector(x, h // 2, 64)
+        # Extract features for current window.
+        features = extractor.feature_vector(x, h*y, 64)
         # Run features through a scaler and classifier and add window coordinates 
         # to `detections` if classified as containing a vehicle
         ...
