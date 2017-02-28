@@ -135,7 +135,7 @@ I use a sliding window approach with a couple of additional constraints. For ins
 
 <p align="center">
   <img src="assets/window.jpg" alt="Window sizes dependent on location"/>
-  Window sizes dependent on location
+  Window size varies across scanning locations
 </p>
 
 Since frame segments must be of various size, and we eventually need to use 64×64 regions as a classifier input, I decided to simply scale the frame to various sizes and then scan them with a 64×64 window. This can be roughly encoded as follows.
