@@ -134,7 +134,7 @@ I trained a Linear SVC (`sklearn` implementation), using feature extractor descr
 I use a sliding window approach with a couple of additional constraints. For instance, we can approximate vehicle size we expect in different frame regions, which makes searching a bit easier.
 
 <p align="center">
-  <img src="assets/window.jpg" alt="Window sizes dependent on location"/>
+  <img src="assets/windows.jpg" alt="Window sizes dependent on location"/>
   Window size varies across scanning locations
 </p>
 
