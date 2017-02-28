@@ -68,8 +68,8 @@ class VehicleTracker(object):
         ----------
         image   : Current frame.
         """
-        scales = np.linspace(.3, .8, 8)
-        y_start = np.linspace(.55, .65, 8)[::-1]
+        scales = np.array([.3, .5, .65, .8]) #np.linspace(.3, .8, 4)
+        y_start = np.array([.6, .57, .56, .55]) #np.linspace(.6, .55, 4)
         frame_detections = np.empty([0, 4], dtype=np.int64)
         for scale, y in zip(scales, y_start):
             scale_detections = self.detections_for_scale(image, scale, y, 64)
