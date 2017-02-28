@@ -87,7 +87,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
-/examples
 /data
 /video
 /._.DS_Store
