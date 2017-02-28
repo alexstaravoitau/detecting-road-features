@@ -69,7 +69,7 @@ class FeatureExtractor(object):
     # Define a function to compute color histogram features
     def color_hist(self, image, nbins=16, bins_range=(0, 256)):
         """
-        Computes color histogram features vector.
+        Computes feature vector based on color channel histogram.
 
         Parameters
         ----------
@@ -91,6 +91,7 @@ class FeatureExtractor(object):
     def feature_vector(self, x=0, y=0, k=64):
         """
         Calculates combined feature vector based on spatial, color histogram and Hog features for specified region.
+        Region defaults to entire image.
 
         Parameters
         ----------
