@@ -148,9 +148,10 @@ for (scale, y) in zip(np.linspace(.3, .8, 4), np.logspace(.6, .55, 4)):
     # Prepare a feature extractor
     extractor = FeatureExtractor(scaled)
     (h, w, d) = scaled.shape
-    # Target stride is no more than 32 (half the size of the window), 
+    s = 64 // 3
+    # Target stride is no more than s (1/3 of the window size here), 
     # making sure windows are equally distributed along the frame width.
-    for x in np.linspace(0, w - k, (w + 32) // 32):
+    for x in np.linspace(0, w - k, (w + s) // s):
         # Extract features for current window.
         features = extractor.feature_vector(x, h*y, 64)
         # Run features through a scaler and classifier and add window coordinates 
