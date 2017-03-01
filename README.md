@@ -229,7 +229,7 @@ def detections():
 
 ```
 
-This approach proved iself to work reasonably well, you can check out the [full video here](https://github.com/navoshta/advanced-lane-finding/blob/master/project_video_annotated.mp4).
+This approach proved iself to work reasonably well, you can check out the [full video here](https://github.com/navoshta/advanced-lane-finding/blob/master/project_video_annotated.mp4). There is the current frame heat map in the top right corner — you may notice quite a few false positives, but most of them are eliminated by merging detections over the last N consecutive frames.
 
 <p align="center">
   <img src="assets/project_video_sample-2.gif" alt="Sample of the project video."/>
