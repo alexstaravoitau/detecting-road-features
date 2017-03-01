@@ -30,7 +30,7 @@ In order to separate regions as containing cars and not containing cars, we are 
 </p>
 
 ## Feature extraction
-After experimenting with various features I settled on a combination of **[HOG (Histogram of Oriented Gradients)](https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients)**, **spatial information** and **color channel histograms**, all using **YCbCr** color space. Feature extraction is implemented as a `FeatureExtractor` class to allow some pre-calculations for each frame. As some features take a lot of time to compute (looking at you, HOG), we only do that once for entire image and then return regions of it. 
+After experimenting with various features I settled on a combination of **[HOG (Histogram of Oriented Gradients)](https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients)**, **spatial information** and **color channel histograms**, all using **YCbCr** color space. Feature extraction is implemented as a context-preserving class (`FeatureExtractor`) to allow some pre-calculations for each frame. As some features take a lot of time to compute (looking at you, HOG), we only do that once for entire image and then return regions of it. 
 
 ### Histogram of Oriented Gradients
 I had to run a bunch of experiments to come up with final parameters, and eventually I settled on HOG with **10 orientations**, **8 pixels per cell** and **2 cells per block**. The experiments went as follows:
@@ -126,7 +126,7 @@ feature_vector = extractor.feature_vector(0, 0, 64)
 > For implementation details check `FeatureExtractor` class in `vehicletracker/features.py`.
 
 ## Training a classifier
-I trained a Linear SVC (`sklearn` implementation), using feature extractor described above. Nothing fancy here, I used `sklearn`'s `train_test_split` to split the dataset into training and validation sets, and used `sklearn`'s `StandardScaler` for feature scaling. I didn't bother with a proper test set, as assumed that classifier performance on the project video would be a good proxy for a test set.
+I trained a Linear SVC (`sklearn` implementation), using feature extractor described above. Nothing fancy here, I used `sklearn`'s `train_test_split` to split the dataset into training and validation sets, and used `sklearn`'s `StandardScaler` for feature scaling. I didn't bother with a proper test set, assuming that classifier performance on the project video would be a good proxy for it.
 
 > For implementation details check `detecting-road-features.ipynb` notebook.
 
@@ -200,7 +200,7 @@ for group in range(1, groups[1] + 1):
 Working with video allowes us to use a couple of additional constraints, in a sense that we expect it to be a stream of consecutive frames. In order to eliminate false positives I accumulate detections over last N frames instead of classifying each frame individually. And before returning a final set of detected regions I run those accumulated detections through the heatmap merging process once again, but with a higher detection threshold.
 
 ```python
-detections_history = deque(maxlen=15)
+detections_history = deque(maxlen=20)
 
 def process(frame):
     ...
@@ -224,7 +224,7 @@ def heatmap_merge(detections, threshold):
 def detections():
     return heatmap_merge(
         np.concatenate(np.array(detections_history)),
-        threshold=min(len(detections_history), 5)
+        threshold=min(len(detections_history), 15)
     )
 
 ```
@@ -245,7 +245,7 @@ This clearly is a very naive way of detecting surrounding vehicles, as it is lik
 * Vehicles and vehicle positions different from those classifier was trained on.
 * ...
 
-Not to mention it is painfully slow and wouldn't run in real time without substantial optimisations. Nevertheless this project is a good representation of what can be done in terms of feature extraction, and how we could use those features as part of more sophisticated algorithms.
+Not to mention it is painfully slow and wouldn't run in real time without substantial optimisations. Nevertheless this project is a good representation of what can be done in terms of feature extraction, and how we could use those features in more sophisticated algorithms.
 
 
 
