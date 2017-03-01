@@ -238,7 +238,7 @@ This approach proved iself to work reasonably well, you can check out the [full 
 > For implementation details check `VehicleTracker` class in `vehicletracker/tracker.py`.
 
 ## Results
-This clearly is a very naive way of detecting surrounding vehicles, as it is likely to fail in too many scenarios:
+This clearly is a very naive way of detecting surrounding vehicles, as it was trained on a fairly small dataset, and is likely to fail in too many scenarios:
 
 * Vehicles obstructing each other.
 * Changing weather conditions.
