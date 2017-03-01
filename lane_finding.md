@@ -210,7 +210,7 @@ Whenever we want to draw the line, we get an average of polynomial coefficients,
 mean_coefficients = np.array(coefficients).mean(axis=0)
 ```
 
-This approach proved iself to work reasonably well, you can check out the [full video here](https://github.com/navoshta/advanced-lane-finding/blob/master/project_video_annotated.mp4).
+This approach proved iself to work reasonably well, you can check out the [full video here](https://github.com/navoshta/advanced-lane-finding/blob/master/data/video/project_video_annotated_lane.mp4).
 
 <p align="center">
   <img src="assets/project_video_sample.gif" alt="Sample of the project video."/>
