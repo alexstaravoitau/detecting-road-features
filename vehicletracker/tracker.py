@@ -24,7 +24,7 @@ class VehicleTracker(object):
         self.scaler = scaler
         self.classifier = classifier
         self.frame_shape = first_frame.shape
-        self.detections_history = deque(maxlen=15)
+        self.detections_history = deque(maxlen=20)
 
     def process(self, frame, draw_detections=True):
         """
@@ -53,10 +53,10 @@ class VehicleTracker(object):
         -------
         Boundaries of detected vehicles.
         """
-        detections, self.heatmap = self.merge_detections(
+        detections, _ = self.merge_detections(
             np.concatenate(np.array(self.detections_history)),
             self.frame_shape,
-            threshold=min(len(self.detections_history), 5)
+            threshold=min(len(self.detections_history), 15)
         )
         return detections
 
@@ -68,13 +68,13 @@ class VehicleTracker(object):
         ----------
         image   : Current frame.
         """
-        scales = np.array([.3, .5, .65, .8]) #np.linspace(.3, .8, 4)
-        y_start = np.array([.6, .57, .56, .55]) #np.linspace(.6, .55, 4)
+        scales = np.array([.3, .5, .65, .8])
+        y_top = np.array([.6, .57, .56, .55])
         frame_detections = np.empty([0, 4], dtype=np.int64)
-        for scale, y in zip(scales, y_start):
+        for scale, y in zip(scales, y_top):
             scale_detections = self.detections_for_scale(image, scale, y, 64)
             frame_detections = np.append(frame_detections, scale_detections, axis=0)
-        detections, _ = self.merge_detections(frame_detections, image.shape, threshold=2)
+        detections, self.heatmap = self.merge_detections(frame_detections, image.shape, threshold=1)
         self.detections_history.append(detections)
 
 
