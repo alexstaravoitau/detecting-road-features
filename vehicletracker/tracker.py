@@ -99,7 +99,7 @@ class VehicleTracker(object):
         (h, w, d) = scaled.shape
         detections = np.empty([0, 4], dtype=np.int)
         y = int(h*y)
-        s = k // 2
+        s = k // 3
         x_range = np.linspace(0, w - k, (w + s) // s)
         for x in x_range.astype(np.int):
             features = extractor.feature_vector(x, y, k)
