@@ -232,7 +232,7 @@ def detections():
 This approach proved iself to work reasonably well, you can check out the [full video here](https://github.com/navoshta/advanced-lane-finding/blob/master/project_video_annotated.mp4).
 
 <p align="center">
-  <img src="assets/project_video_sample.gif" alt="Sample of the project video."/>
+  <img src="assets/project_video_sample-2.gif" alt="Sample of the project video."/>
 </p>
 
 > For implementation details check `VehicleTracker` class in `vehicletracker/tracker.py`.
