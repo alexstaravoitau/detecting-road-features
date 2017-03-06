@@ -1,17 +1,21 @@
+# Project structure
+The goal of this project was to try and detect a set of road features in a forward facing vehicle camera data. I call it a naive way as its using mainly computer vision techniques (no relation to naive Bayesian!). Features we are going to detect and track are lane boundaries and surrounding vehicles.
+
+| File                                | Description                                                                        |
+| ----------------------------------- | ---------------------------------------------------------------------------------- |
+| `source/lanetracker/camera.py`      | Implements camera calibration based on the set of calibration images. |
+| `source/lanetracker/tracker.py`     | Implements lane tracking by applying a processing pipeline to consecutive frames in a video. |
+| `source/lanetracker/gradients.py`   | Set of edge-detecting routines based on gradients and color. |
+| `source/lanetracker/perspective.py` | Set of perspective transformation routines. |
+| `source/lanetracker/line.py`        | `Line` class representing a single lane boundary line. |
+| `source/lanetracker/window.py`      | `Window` class representing a scanning window used to detect points likely to represent lines. |
+| `source/vehicletracker/features.py` | Implements feature extraction pipeline for vehicle tracking. |
+| `source/vehicletracker/tracker.py`  | Implements surrounding vehicles tracking by applying a processing pipeline to consecutive frames in a video. |
+| `source/vehicletracker/utility.py`  | Set of convenient logging routines. |
+
 # Lane Finding
 
-## Project structure
-
-| File                         | Description                                                                        |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `lanetracker/camera.py`      | Implements camera calibration based on the set of calibration images. |
-| `lanetracker/tracker.py`     | Implements lane tracking by applying a processing pipeline to consecutive frames in a video. |
-| `lanetracker/gradients.py`   | Set of edge-detecting routines based on gradients and color. |
-| `lanetracker/perspective.py` | Set of perspective transformation routines. |
-| `lanetracker/line.py`        | `Line` class representing a single lane boundary line. |
-| `lanetracker/window.py`      | `Window` class representing a scanning window used to detect points likely to represent lines. |
-
-The goal of this project was to prepare a processing pipeline to identify the lane boundaries in a video. The pipeline includes the following steps that we apply to each frame:
+The pipeline to identify the lane boundaries in a video includes the following steps that we apply to each frame:
 * **Camera calibration.** To cater for inevitable camera distortions, we calculate camera calibration using a set of calibration chessboard images, and applying correction to each of the frames.
 * **Edge detection with gradient and color thresholds.** We then use a bunch of metrics based on gradients and color information to highlight edges in the frame.
 * **Perspective transformation.** To make lane boundaries extraction easier we apply a perspective transformation, resulting in something similar to a bird's eye view of the road ahead of the vehicle.
@@ -230,25 +234,7 @@ This clearly is a very naive way of detecting and tracking the lane, as it is li
 Nevertheless this project is a good representation of what can be done by simply inspecting pixel values' gradients and color spaces. It shows that even with these limited tools we can extract a lot of useful information from an image, and that this information can potentially be used as an input to more sophisticated algorithms.
 
 # Vehicle Tracking
-
-## Project structure
-
-| File                         | Description                                                                        |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `vehicletracker/features.py` | Implements feature extraction pipeline. |
-| `vehicletracker/tracker.py`  | Implements surrounding vehicles tracking by applying a processing pipeline to consecutive frames in a video. |
-| `vehicletracker/utility.py`  | Set of convenient logging routines. |
-
-The goal of this project was to prepare a processing pipeline to identify surrounding vehicles in a video. We are going to break it down into the following steps:
-
-* **Explore dataset.** Check out the dataset we are working with.
-* **Extract features.** We need to identify features that would be useful for vehicle detections and prepare a feature extraction pipeline.
-* **Train a classifier.** We need to train a classifier to detect a car in individual frame segment.
-* **Apply frame segmentation.** Then we segment frame into _windows_ of various size that we run through the classifier.
-* **Merge individual segment detections.** As there will inevitably be multiple detections we merge them together using a heat map, which should also help reducing the number of false positives.
-
-## Dataset
-In order to separate regions as containing cars and not containing cars, we are going to train a classifier using a dataset provided by Udacity. It contains **17,760** color RGB images **64×64 px** each, with **8,792** samples labeled as containing **vehicles** and **8,968** samples labeled as **non-vehicles**.
+We are going to use a bit of machine learning to detect vehicle presence in an image by training a classifer that would classify an image as either containing or not containing a vehicle. We will train this classifer using a dataset provided by Udacity which comes in two separate archives: [images containing cars](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [images not containing cars](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip). The dataset contains **17,760** color RGB images **64×64 px** each, with **8,792** samples labeled as containing **vehicles** and **8,968** samples labeled as **non-vehicles**.
 
 <p align="center">
   <img src="assets/cars.png" alt="Random sample of cars."/>
@@ -259,6 +245,12 @@ In order to separate regions as containing cars and not containing cars, we are 
   <img src="assets/non-cars.png" alt="Random sample of non-cars."/>
   Random sample labeled as not containing cars.
 </p>
+
+In order to prepare a processing pipeline to identify surrounding vehicles, we are going to break it down into the following steps:
+
+* **Extract features and train a classifier.** We need to identify features that would be useful for vehicle detections and prepare a feature extraction pipeline. We then use it to train a classifier to detect a car in individual frame segment.
+* **Apply frame segmentation.** We then segment frame into _windows_ of various size that we run through the aforementioned classifier.
+* **Merge individual segment detections.** As there will inevitably be multiple detections we merge them together using a heat map, which should also help reducing the number of false positives.
 
 ## Feature extraction
 After experimenting with various features I settled on a combination of **[HOG (Histogram of Oriented Gradients)](https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients)**, **spatial information** and **color channel histograms**, all using **YCbCr** color space. Feature extraction is implemented as a context-preserving class (`FeatureExtractor`) to allow some pre-calculations for each frame. As some features take a lot of time to compute (looking at you, HOG), we only do that once for entire image and then return regions of it. 
@@ -469,12 +461,14 @@ This approach proved iself to work reasonably well, you can check out the [full 
 
 > For implementation details check `VehicleTracker` class in `vehicletracker/tracker.py`.
 
-## Results
-This clearly is a very naive way of detecting surrounding vehicles, as it was trained on a fairly small dataset, and is likely to fail in too many scenarios:
+# Results
+This clearly is a very naive way of detecting and tracking road features, and wouldn't be used in the fiels as it is likely to fail in too many scenarios:
 
-* Vehicles obstructing each other.
+* Going up or down the hill.
 * Changing weather conditions.
+* Worn out lane markings.
+* Obstruction by other vehicles or vehicles obstructing each other.
 * Vehicles and vehicle positions different from those classifier was trained on.
 * ...
 
-Not to mention it is painfully slow and wouldn't run in real time without substantial optimisations. Nevertheless this project is a good representation of what can be done in terms of feature extraction, and how we could use those features in more sophisticated algorithms.
+Not to mention it is painfully slow and wouldn't run in real time without substantial optimisations. Nevertheless this project is a good representation of what can be done by simply inspecting pixel values' gradients and color spaces. It shows that even with these limited tools we can extract a lot of useful information from an image, and that this information can potentially be used as a feature input to more sophisticated algorithms.
