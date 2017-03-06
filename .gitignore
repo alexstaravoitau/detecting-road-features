@@ -89,4 +89,7 @@ ENV/
 .ropeproject
 /data/video/extra
 /data/vehicle_classification
-/video
+.idea
+._*
+.DS_Store
+
