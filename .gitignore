@@ -90,5 +90,3 @@ ENV/
 /data/video/extra
 /data/vehicle_classification
 /video
-/._.DS_Store
-/.idea
